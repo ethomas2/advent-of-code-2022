@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -40,6 +41,38 @@ fn part1() -> std::io::Result<()> {
     Ok(())
 }
 
+fn part2() -> std::io::Result<()> {
+    let file = File::open("src/d03/input")?;
+    let lines = BufReader::new(file).lines();
+    let result: i32 = lines
+        .chunks(3)
+        .into_iter()
+        .map(|chunk| {
+            let sets: Vec<HashSet<char>> = chunk // chunk is iterator over Strings.
+                .collect::<std::io::Result<Vec<String>>>() // [String, String, String]
+                .unwrap()
+                .into_iter()
+                .map(|line| line.chars().collect::<HashSet<char>>())
+                .collect();
+            let intersection: Vec<char> = sets
+                .into_iter()
+                .reduce(|a, b| a.intersection(&b).copied().collect::<HashSet<char>>())
+                .unwrap()
+                .into_iter()
+                .collect();
+            assert!(intersection.len() == 1);
+            println!(
+                "intersection:: {:?}, {}",
+                intersection,
+                priority(intersection[0]).unwrap()
+            );
+            return priority(intersection[0]).unwrap();
+        })
+        .sum();
+    println!("result {}", result);
+    Ok(())
+}
+
 fn main() -> std::io::Result<()> {
-    part1()
+    part2()
 }
