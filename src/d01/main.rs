@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 fn part1() -> std::io::Result<()> {
-    let mut file = File::open("input")?;
+    let mut file = File::open("src/d01/input")?;
 
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -27,7 +27,7 @@ fn part1() -> std::io::Result<()> {
 }
 
 fn part2() -> std::io::Result<()> {
-    let mut file = File::open("input")?;
+    let mut file = File::open("src/d01/input")?;
 
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;

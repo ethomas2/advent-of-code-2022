@@ -1,7 +1,8 @@
 [package]
-name = "advent"
+name = "advent-of-code-2022"
 version = "0.1.0"
 edition = "2021"
+include = ["src/"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,5 +10,9 @@ edition = "2021"
 itertools = "0.10.0"
 
 [[bin]]
-name = "advent"
+name = "d01"
 path = "src/d01/main.rs"
+
+[[bin]]
+name = "d02"
+path = "src/d02/main.rs"
