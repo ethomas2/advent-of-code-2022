@@ -9,7 +9,7 @@ struct Diagram {
 impl Diagram {
     // TODO: why do i need the lifetime parameter here? how could the &str have a lifetime less
     // than from_lines?
-    fn from_lines<'a>(lines: &'a mut impl Iterator<Item = &'a str>) -> Self {
+    fn from_lines<'a>(lines: &'a impl Iterator<Item = &'a str>) -> Self {
         let grid: Vec<Vec<char>> = lines
             .map(|line| line.chars().map(|x| x).collect::<Stack>())
             .collect();
