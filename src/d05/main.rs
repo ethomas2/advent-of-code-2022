@@ -3,13 +3,15 @@ use std::fs;
 use std::str::Lines;
 
 type Stack = Vec<char>;
+
+#[derive(Debug)]
 struct Diagram {
     stacks: Vec<Stack>,
 }
 impl Diagram {
     // TODO: why do i need the lifetime parameter here? how could the &str have a lifetime less
     // than from_lines?
-    fn from_lines<'a>(lines: &'a impl Iterator<Item = &'a str>) -> Self {
+    fn from_lines<'a>(lines: impl Iterator<Item = &'a str>) -> Self {
         let grid: Vec<Vec<char>> = lines
             .map(|line| line.chars().map(|x| x).collect::<Stack>())
             .collect();
@@ -23,9 +25,9 @@ impl Diagram {
         let stacks = col_indicies
             .map(|col_idx| {
                 // let mut stack: Vec<char> =  Vec::new();
-                let row_indicies = (0..=(nrows - 1))
-                    .rev()
-                    .take_while(|&row_idx| grid[row_idx][col_idx] != ' ');
+                let row_indicies = (0..=(nrows - 2)).rev().take_while(|&row_idx| {
+                    col_idx <= grid[row_idx].len() && grid[row_idx][col_idx] != ' '
+                });
                 let stack = row_indicies
                     .map(|row_idx| grid[row_idx][col_idx])
                     .collect_vec();
@@ -36,9 +38,11 @@ impl Diagram {
     }
 }
 
+#[derive(Debug)]
 struct Command {}
 impl Command {
     fn from_str(s: &str) -> Result<Command, String> {
+        println!("from_str, {}", s);
         Ok(Command {})
     }
 }
@@ -51,8 +55,11 @@ fn main() -> std::io::Result<()> {
     //    for each column index, initialize a stack and push elements on it from bottom to top
 
     let content = fs::read_to_string("src/d05/input")?;
-    let lines = content.lines();
-    let diagram = Diagram::from_lines(&mut lines.take_while(|&line| line != ""));
-    // let commands = lines.map(Command::from_str);
+    let mut lines = content.lines();
+    let first_lines = lines.by_ref().take_while(|&line| line != "");
+    let diagram = Diagram::from_lines(first_lines);
+    println!("{:?}", diagram);
+    let commands = lines.map(Command::from_str).collect::<Vec<_>>();
+    // println!("{:?}", commands);
     Ok(())
 }
