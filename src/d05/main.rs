@@ -1,14 +1,16 @@
 use itertools::Itertools;
+use regex::Regex;
+use std::error::Error;
 use std::fs;
 use std::str::Lines;
 
 type Stack = Vec<char>;
 
 #[derive(Debug)]
-struct Diagram {
+struct BoardState {
     stacks: Vec<Stack>,
 }
-impl Diagram {
+impl BoardState {
     // TODO: why do i need the lifetime parameter here? how could the &str have a lifetime less
     // than from_lines?
     fn from_lines<'a>(lines: impl Iterator<Item = &'a str>) -> Self {
@@ -24,7 +26,6 @@ impl Diagram {
                 .filter_map(|(idx, ch)| if *ch == ' ' { None } else { Some(idx) });
         let stacks = col_indicies
             .map(|col_idx| {
-                // let mut stack: Vec<char> =  Vec::new();
                 let row_indicies = (0..=(nrows - 2)).rev().take_while(|&row_idx| {
                     col_idx <= grid[row_idx].len() && grid[row_idx][col_idx] != ' '
                 });
@@ -34,32 +35,55 @@ impl Diagram {
                 stack
             })
             .collect_vec();
-        return Diagram { stacks };
+        return BoardState { stacks };
     }
 }
 
-#[derive(Debug)]
-struct Command {}
+#[derive(Debug, Copy, Clone)]
+struct Command {
+    num: usize,
+    from: usize,
+    to: usize,
+}
 impl Command {
     fn from_str(s: &str) -> Result<Command, String> {
-        println!("from_str, {}", s);
-        Ok(Command {})
+        let re = Regex::new("move (\\d+) from (\\d+) to (\\d+)").map_err(|err| err.to_string())?;
+        let caps = re.captures(s).ok_or(String::from("Invalid Strign"))?;
+
+        let num = caps[1].parse::<usize>().map_err(|e| e.to_string())?;
+        let from = caps[2].parse::<usize>().map_err(|e| e.to_string())? - 1;
+        let to = caps[3].parse::<usize>().map_err(|e| e.to_string())? - 1;
+
+        Ok(Command { num, from, to })
     }
 }
 
-fn main() -> std::io::Result<()> {
-    // split into diagram and commands
-    // diagram
-    //    parse into 2d array of chars
-    //    bottom row numbers is index of columns
-    //    for each column index, initialize a stack and push elements on it from bottom to top
+fn execute_command(mut boardstate: BoardState, command: Command) -> BoardState {
+    let Command { num, from, to } = command;
+    for _ in 1..=num {
+        // TODO: don't unwrap
+        let x = boardstate.stacks[from].pop().unwrap();
+        boardstate.stacks[to].push(x);
+    }
 
+    return boardstate;
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
     let content = fs::read_to_string("src/d05/input")?;
     let mut lines = content.lines();
     let first_lines = lines.by_ref().take_while(|&line| line != "");
-    let diagram = Diagram::from_lines(first_lines);
-    println!("{:?}", diagram);
-    let commands = lines.map(Command::from_str).collect::<Vec<_>>();
-    // println!("{:?}", commands);
+    let boardstate = BoardState::from_lines(first_lines);
+    let commands = lines
+        .map(Command::from_str)
+        .collect::<Result<Vec<Command>, String>>()?;
+    let new_boardstate = commands.into_iter().fold(boardstate, execute_command);
+    let final_chars = String::from_iter(
+        new_boardstate
+            .stacks
+            .iter()
+            .map(|stack| stack.last().unwrap()),
+    );
+    println!("{}", final_chars);
     Ok(())
 }

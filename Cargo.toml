@@ -8,6 +8,7 @@ include = ["src/"]
 
 [dependencies]
 itertools = "0.10.0"
+regex = "1.7.3"
 
 [[bin]]
 name = "d01"
