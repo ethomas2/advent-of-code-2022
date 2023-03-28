@@ -2,7 +2,6 @@ use itertools::Itertools;
 use regex::Regex;
 use std::error::Error;
 use std::fs;
-use std::str::Lines;
 
 type Stack = Vec<char>;
 
