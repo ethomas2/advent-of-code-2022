@@ -58,7 +58,7 @@ impl Command {
     }
 }
 
-fn execute_command(mut boardstate: BoardState, command: Command) -> BoardState {
+fn execute_command_flip_order(mut boardstate: BoardState, command: Command) -> BoardState {
     let Command { num, from, to } = command;
     for _ in 1..=num {
         // TODO: don't unwrap
@@ -69,7 +69,18 @@ fn execute_command(mut boardstate: BoardState, command: Command) -> BoardState {
     return boardstate;
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn execute_command_maintain_order(mut boardstate: BoardState, command: Command) -> BoardState {
+    let Command { num, from, to } = command;
+    let from_stack_len = boardstate.stacks[from].len();
+    let chunk = boardstate.stacks[from]
+        .splice((from_stack_len - num)..from_stack_len, vec![])
+        .collect_vec();
+    boardstate.stacks[to].extend(chunk);
+
+    return boardstate;
+}
+
+fn part1() -> Result<(), Box<dyn Error>> {
     let content = fs::read_to_string("src/d05/input")?;
     let mut lines = content.lines();
     let first_lines = lines.by_ref().take_while(|&line| line != "");
@@ -77,7 +88,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let commands = lines
         .map(Command::from_str)
         .collect::<Result<Vec<Command>, String>>()?;
-    let new_boardstate = commands.into_iter().fold(boardstate, execute_command);
+    let new_boardstate = commands
+        .into_iter()
+        .fold(boardstate, execute_command_flip_order);
     let final_chars = String::from_iter(
         new_boardstate
             .stacks
@@ -86,4 +99,29 @@ fn main() -> Result<(), Box<dyn Error>> {
     );
     println!("{}", final_chars);
     Ok(())
+}
+
+fn part2() -> Result<(), Box<dyn Error>> {
+    let content = fs::read_to_string("src/d05/input")?;
+    let mut lines = content.lines();
+    let first_lines = lines.by_ref().take_while(|&line| line != "");
+    let boardstate = BoardState::from_lines(first_lines);
+    let commands = lines
+        .map(Command::from_str)
+        .collect::<Result<Vec<Command>, String>>()?;
+    let new_boardstate = commands
+        .into_iter()
+        .fold(boardstate, execute_command_maintain_order);
+    let final_chars = String::from_iter(
+        new_boardstate
+            .stacks
+            .iter()
+            .map(|stack| stack.last().unwrap()),
+    );
+    println!("{}", final_chars);
+    Ok(())
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    return part2();
 }
