@@ -1,7 +1,8 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::error::Error;
 use std::fs;
 use std::ops::Add;
+use std::rc::Rc;
 
 #[derive(Copy, Clone)]
 enum Direction {
@@ -107,13 +108,99 @@ impl<'a> From<&'a str> for Grid {
     }
 }
 
+struct BfsIterator<Node: Bfs> {
+    queue: VecDeque<Node>,
+}
+
+impl<Node: Bfs> Iterator for BfsIterator<Node> {
+    type Item = Node;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.queue.pop_front() {
+            None => None,
+            Some(n) => {
+                self.queue.extend(n.children());
+                Some(n)
+            }
+        }
+    }
+}
+
+struct FNode<Node> {
+    node: Node,
+    parent: Option<Rc<FNode<Node>>>,
+}
+
+impl<Node> FNode<Node> {
+    fn to_list(self) -> Vec<Node> {
+        let mut v: Vec<Node> = vec![];
+        let mut fnode = self;
+        loop {
+            v.push(fnode.node);
+            match fnode.parent {
+                // TODO: get rid of this unwrap()
+                Some(parent_fnode) => fnode = Rc::try_unwrap(parent_fnode).ok().unwrap(),
+                None => break,
+            }
+        }
+        v
+    }
+}
+
+fn find_pop<T>(v: &mut Vec<T>, f: impl Fn(&T) -> bool) -> Option<T> {
+    for (index, item) in v.iter().enumerate() {
+        if f(item) {
+            return Some(v.remove(index));
+        }
+    }
+    return None;
+}
+
+/// Bfs is meant to be implemented by a node object. If a Node has a node.children() function that
+/// is an iterator over children, then you can bfs() it
+trait Bfs: Sized {
+    // TODO: make children() return an iterator over Self instead
+    fn children(&self) -> Vec<Self>;
+
+    fn bfs(self) -> BfsIterator<Self> {
+        // the first one is cloned, but none of the others
+        BfsIterator {
+            queue: VecDeque::from(vec![self]),
+        }
+    }
+
+    fn find_path(self, f: impl Fn(&Self) -> bool) -> Option<Vec<Self>> {
+        let mut queue: VecDeque<FNode<Self>> = vec![FNode {
+            node: self,
+            parent: None,
+        }]
+        .into();
+        while let Some(fnode) = queue.pop_back() {
+            let children = fnode.node.children();
+            let handle = Some(Rc::new(fnode));
+            let mut child_fnodes = children
+                .into_iter()
+                .map(|node| FNode {
+                    node,
+                    parent: handle.clone(),
+                })
+                .collect::<Vec<_>>();
+            match find_pop(&mut child_fnodes, |fnode: &FNode<Self>| f(&fnode.node)) {
+                None => queue.extend(child_fnodes),
+                // TODO: want drop queue before this
+                Some(fnode) => return Some(fnode.to_list()),
+            }
+        }
+        None
+    }
+}
+
 struct BoardState {
     grid: Grid,
     player: Location,
 }
 
-impl BoardState {
-    fn child_nodes(&self) -> Vec<BoardState> {
+impl Bfs for BoardState {
+    fn children(&self) -> Vec<BoardState> {
         let BoardState {
             grid: current_grid,
             player,
@@ -221,6 +308,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     //   triple array of blizzards
     // make grid.next() fn that gives the next grid
     // bfs for (Grid, loc) tuples
+
+    return Ok(());
 
     let content = fs::read_to_string("src/d24/input")?;
     let mut grid = Grid::from(content.as_str());
