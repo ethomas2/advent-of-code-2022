@@ -145,7 +145,8 @@ mod fp {
         return None;
     }
 
-    pub fn find_path<T: std::fmt::Debug + std::fmt::Display>(
+    /// function does not know to not revisit items it has already seen
+    pub fn find_path<T: std::fmt::Debug>(
         start: T,
         f: impl Fn(&T) -> bool,
         get_children: impl Fn(&T) -> Vec<T>,
@@ -158,14 +159,9 @@ mod fp {
             parent: None,
         }]
         .into();
-        while let Some(fnode) = queue.pop_back() {
+        while let Some(fnode) = queue.pop_front() {
             let children = get_children(&fnode.node);
-            println!("{:?} -- {:?}", &fnode, children);
             let handle = Some(Rc::new(fnode));
-            println!(
-                "rc count 1 {:?}",
-                Rc::strong_count(handle.as_ref().unwrap())
-            );
             let mut child_fnodes = children
                 .into_iter()
                 .map(|node| FNode {
@@ -174,11 +170,6 @@ mod fp {
                 })
                 .collect::<Vec<_>>();
 
-            println!(
-                "rc count 2 {:?}",
-                Rc::strong_count(handle.as_ref().unwrap())
-            );
-
             match find_pop(&mut child_fnodes, |fnode: &FNode<T>| f(&fnode.node)) {
                 None => queue.extend(child_fnodes),
                 Some(fnode) => {
@@ -186,11 +177,58 @@ mod fp {
                     drop(queue);
                     drop(child_fnodes);
                     drop(handle);
-                    return Some(fnode.to_list());
+                    let mut l = fnode.to_list();
+                    l.reverse();
+                    return Some(l);
                 }
             }
         }
         None
+    }
+}
+
+#[cfg(test)]
+mod test_fp {
+    use super::fp;
+
+    #[test]
+    fn test_basic() {
+        let get_children: fn(&isize) -> Vec<isize> = |n| vec![2 * n, (2 * n) + 1];
+        // first just make sure this doesn't fail for anything 1 - 100
+        for target in 1..100 {
+            fp::find_path(1_isize, |n| *n == target, get_children);
+        }
+
+        // then assert that these particular ones are the correct values
+        let examples: Vec<(isize, _)> = vec![
+            (14, Some(vec![1, 3, 7, 14])),
+            (34, Some(vec![1, 2, 4, 8, 17, 34])),
+            (59, Some(vec![1, 3, 7, 14, 29, 59])),
+            (87, Some(vec![1, 2, 5, 10, 21, 43, 87])),
+        ];
+        for (target, expected) in examples.iter() {
+            assert_eq!(fp::find_path(1, |n| n == target, get_children), *expected);
+        }
+    }
+
+    #[test]
+    fn test_empty() {
+        let get_children: fn(&(isize, isize)) -> Vec<(isize, isize)> = |&(x, y)| {
+            vec![(x + 1, y), (x, y + 1)]
+                .into_iter()
+                .filter(|(x, y)| 0 <= *x && *x <= 5 && 0 <= *y && *y <= 5)
+                .collect::<Vec<_>>()
+        };
+
+        fp::find_path((0_isize, 0_isize), |&(x, y)| (x, y) == (2, 2), get_children);
+        assert_eq!(
+            fp::find_path(
+                (0_isize, 0_isize),
+                |&(x, y)| (x, y) == (10, 10),
+                get_children,
+            ),
+            None
+        );
     }
 }
 
@@ -308,11 +346,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     //   triple array of blizzards
     // make grid.next() fn that gives the next grid
     // bfs for (Grid, loc) tuples
-
-    println!(
-        "{:?}",
-        fp::find_path(1 as usize, |n| *n == 2, |n| vec![2 * n, 2 * n + 1])
-    );
 
     return Ok(());
 
