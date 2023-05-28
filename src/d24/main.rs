@@ -5,7 +5,7 @@ use std::fs;
 use std::ops::Add;
 use std::rc::Rc;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 enum Direction {
     Left,
     Right,
@@ -25,7 +25,7 @@ impl Direction {
 }
 type Blizzard = Direction;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 enum GridSpace {
     Wall,
     Space(Vec<Blizzard>),
@@ -114,13 +114,12 @@ mod fp {
     use std::fmt::Debug;
     use std::rc::Rc;
 
-    #[derive(Debug)]
-    struct FNode<Node: Debug> {
+    struct FNode<Node> {
         node: Node,
         parent: Option<Rc<FNode<Node>>>,
     }
 
-    impl<Node: Debug> FNode<Node> {
+    impl<Node> FNode<Node> {
         fn to_list(self) -> Vec<Node> {
             let mut v: Vec<Node> = vec![];
             let mut fnode = self;
@@ -146,7 +145,7 @@ mod fp {
     }
 
     /// function does not know to not revisit items it has already seen
-    pub fn find_path<T: std::fmt::Debug>(
+    pub fn find_path<T>(
         start: T,
         f: impl Fn(&T) -> bool,
         get_children: impl Fn(&T) -> Vec<T>,
@@ -338,6 +337,28 @@ impl Grid {
             println!();
         }
     }
+
+    fn get_player_start_location(&self) -> Location {
+        let start_locations = self
+            .grid
+            .iter()
+            .filter(|(Location(ref r, ref c), ref gs)| *r == 0 && **gs == GridSpace::Space(vec![]))
+            .collect::<Vec<_>>();
+        assert!(start_locations.len() == 1);
+        return *start_locations[0].0;
+    }
+
+    fn get_player_end_location(&self) -> Location {
+        let end_locations = self
+            .grid
+            .iter()
+            .filter(|(Location(ref r, _), ref gs)| {
+                *r == (&self.height - 1) as isize && **gs == GridSpace::Space(vec![])
+            })
+            .collect::<Vec<_>>();
+        assert!(end_locations.len() == 1);
+        return *end_locations[0].0;
+    }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -347,15 +368,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     // make grid.next() fn that gives the next grid
     // bfs for (Grid, loc) tuples
 
-    return Ok(());
-
     let content = fs::read_to_string("src/d24/input")?;
     let mut grid = Grid::from(content.as_str());
-    for _ in 1..=10 {
-        grid.pprint();
-        println!("-----------------------------------------");
-        grid = grid.next();
-    }
+    // for _ in 1..=10 {
+    //     grid.pprint();
+    //     println!("-----------------------------------------");
+    //     grid = grid.next();
+    // }
+
+    let player = *&grid.get_player_start_location();
+    let endloc = *&grid.get_player_end_location();
+    println!("height {:?}", &grid.height);
+    let bs = BoardState { grid, player };
+    println!("startloc {:?} ", player);
+    println!("endloc {:?} ", endloc);
+    let path = fp::find_path(bs, |bs| bs.player == endloc, |bs| bs.children());
+    println!("num steps {:?}", path.map(|x| x.len()));
 
     Ok(())
 }
