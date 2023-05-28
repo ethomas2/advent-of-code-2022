@@ -159,10 +159,13 @@ mod fp {
         }]
         .into();
         while let Some(fnode) = queue.pop_back() {
-            println!("foo");
             let children = get_children(&fnode.node);
             println!("{:?} -- {:?}", &fnode, children);
             let handle = Some(Rc::new(fnode));
+            println!(
+                "rc count 1 {:?}",
+                Rc::strong_count(handle.as_ref().unwrap())
+            );
             let mut child_fnodes = children
                 .into_iter()
                 .map(|node| FNode {
@@ -170,11 +173,19 @@ mod fp {
                     parent: handle.clone(),
                 })
                 .collect::<Vec<_>>();
+
+            println!(
+                "rc count 2 {:?}",
+                Rc::strong_count(handle.as_ref().unwrap())
+            );
+
             match find_pop(&mut child_fnodes, |fnode: &FNode<T>| f(&fnode.node)) {
                 None => queue.extend(child_fnodes),
-                // TODO: want drop queue before this
                 Some(fnode) => {
-                    drop(queue); // This isn't necessary I dn't think
+                    // Drop all the things so Rc::unwrap() in to_list() works
+                    drop(queue);
+                    drop(child_fnodes);
+                    drop(handle);
                     return Some(fnode.to_list());
                 }
             }
@@ -298,7 +309,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     // make grid.next() fn that gives the next grid
     // bfs for (Grid, loc) tuples
 
-    // println!("{:?}", vec![1 * 2_usize, 2, 3]);
     println!(
         "{:?}",
         fp::find_path(1 as usize, |n| *n == 2, |n| vec![2 * n, 2 * n + 1])
