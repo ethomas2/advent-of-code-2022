@@ -274,10 +274,11 @@ impl BoardState {
 
 impl Grid {
     fn get(&self, loc: Location) -> Option<&GridSpace> {
-        let idx = self.loc_to_idx(loc);
-        if idx < 0 || idx >= self.grid.len() {
+        let Location(r, c) = loc;
+        if r < 0 || r >= self.height as isize || c < 0 || c > self.width as isize {
             return None;
         }
+        let idx = self.loc_to_idx(loc);
         return Some(&self.grid[idx]);
     }
     fn loc_to_idx(&self, loc: Location) -> usize {
@@ -293,13 +294,13 @@ impl Grid {
             width,
             ..
         } = self.clone_with_empty_spaces();
+        // self.clone_with_empty_spaces().pprint();
         for (idx, gridspace) in oldgrid.iter().enumerate() {
             let loc = Location((idx / width) as isize, (idx % width) as isize);
             match gridspace {
                 GridSpace::Space(blizzards) => {
                     for blizzard in blizzards {
                         let mut newloc: Location = loc + *blizzard;
-                        let newidx = width * (newloc.0 as usize) + (newloc.1 as usize);
                         let Location(ref mut r, ref mut c) = newloc;
 
                         if *r <= 0 {
@@ -313,6 +314,7 @@ impl Grid {
                         } else if *c >= self.width as isize - 1 {
                             *c = 1;
                         }
+                        let newidx = self.loc_to_idx(newloc);
 
                         match newgrid[newidx] {
                             GridSpace::Wall => panic!("logic error"),
@@ -371,9 +373,8 @@ impl Grid {
     }
 
     fn get_player_start_location(&self) -> Location {
-        self.pprint();
         let start_locations = (0..self.width)
-            .filter(|idx| self.get(dbg!(self.idx_to_loc(*idx))) == Some(&GridSpace::Space(vec![])))
+            .filter(|idx| self.get(self.idx_to_loc(*idx)) == Some(&GridSpace::Space(vec![])))
             .collect::<Vec<_>>();
         assert!(start_locations.len() == 1);
         return self.idx_to_loc(start_locations[0]);
