@@ -72,20 +72,23 @@ where
 
 #[derive(Clone, Debug)]
 struct Grid {
-    grid: HashMap<Location, GridSpace>,
+    grid: Vec<GridSpace>,
     height: usize,
     width: usize,
 }
 
 impl<'a> From<&'a str> for Grid {
     fn from(content: &'a str) -> Self {
-        let grid = content
+        let width = content.lines().next().unwrap().len();
+        let height = content.lines().count();
+        let mut grid: Vec<GridSpace> = Vec::with_capacity(width * height);
+        content
             .lines()
             .enumerate()
             .flat_map(|(r, line)| {
                 line.chars().enumerate().map(move |(c, ch)| {
-                    let loc: Location = (r as isize, c as isize).into();
-                    (loc, ch)
+                    // let loc: Location = (r as isize, c as isize).into();
+                    ((r, c), ch)
                 })
             })
             .map(|(loc, ch)| {
@@ -99,11 +102,14 @@ impl<'a> From<&'a str> for Grid {
                 };
                 (loc, spot)
             })
-            .collect::<HashMap<Location, GridSpace>>();
+            .for_each(|((r, c), gridspace)| {
+                grid[r * width + c] = gridspace;
+            });
+
         Grid {
             grid,
-            width: content.lines().next().unwrap().len(),
-            height: content.lines().count(),
+            width,
+            height,
         }
     }
 }
@@ -251,7 +257,7 @@ impl BoardState {
         ];
         let child_nodes: Vec<BoardState> = steps
             .iter()
-            .filter(|loc| match next_grid.grid.get(&loc) {
+            .filter(|loc| match next_grid.get(**loc) {
                 None => false,
                 Some(GridSpace::Wall) => false,
                 Some(GridSpace::Space(v)) if v.len() == 0 => true,
@@ -267,16 +273,29 @@ impl BoardState {
 }
 
 impl Grid {
+    fn get(&self, loc: Location) -> Option<GridSpace> {
+        todo!()
+    }
+    fn loc_to_idx(&self, loc: Location) -> usize {
+        return self.width * loc.0 as usize + loc.1 as usize;
+    }
+    fn idx_to_loc(&self, idx: usize) -> Location {
+        return Location((idx % self.width) as isize, (idx / self.width) as isize);
+    }
     fn next(&self) -> Self {
         let oldgrid = &self.grid;
         let Grid {
-            grid: mut newgrid, ..
+            grid: mut newgrid,
+            width,
+            ..
         } = self.clone_with_empty_spaces();
-        for (loc, gridspace) in oldgrid {
+        for (idx, gridspace) in oldgrid.iter().enumerate() {
+            let loc = Location((idx % width) as isize, (idx / width) as isize);
             match gridspace {
                 GridSpace::Space(blizzards) => {
                     for blizzard in blizzards {
-                        let mut newloc: Location = *loc + *blizzard;
+                        let mut newloc: Location = loc + *blizzard;
+                        let newidx = width * (newloc.0 as usize) + (newloc.1 as usize);
                         let Location(ref mut r, ref mut c) = newloc;
 
                         if *r <= 0 {
@@ -291,14 +310,9 @@ impl Grid {
                             *c = 1;
                         }
 
-                        match newgrid.get_mut(&newloc) {
-                            None => {
-                                newgrid.insert(newloc, GridSpace::Space(vec![*blizzard]));
-                            }
-                            Some(GridSpace::Space(ref mut v)) => {
-                                v.push(*blizzard);
-                            }
-                            Some(GridSpace::Wall) => {}
+                        match newgrid[newidx] {
+                            GridSpace::Wall => panic!("logic error"),
+                            GridSpace::Space(ref mut v) => v.push(*blizzard),
                         }
                     }
                 }
@@ -313,19 +327,15 @@ impl Grid {
     }
 
     fn clone_with_empty_spaces(&self) -> Grid {
-        let clone: HashMap<Location, GridSpace> = self
-            .grid
-            .keys()
-            .map(|k| {
-                let val = match self.grid.get(k).unwrap() {
-                    GridSpace::Wall => GridSpace::Wall,
-                    GridSpace::Space(_) => GridSpace::Space(vec![]),
-                };
-                (*k, val)
-            })
-            .collect::<_>();
+        let mut newgrid = self.grid.clone();
+        for space in newgrid.iter_mut() {
+            match space {
+                GridSpace::Space(ref mut v) => v.clear(),
+                _ => {}
+            }
+        }
         Grid {
-            grid: clone,
+            grid: newgrid,
             height: self.height,
             width: self.width,
         }
@@ -334,7 +344,7 @@ impl Grid {
     fn pprint(&self) {
         for r in 0..self.height {
             for c in 0..self.width {
-                let item = self.grid.get(&(r as isize, c as isize).into());
+                let item = self.get((r as isize, c as isize).into());
                 let to_display = match item {
                     Some(GridSpace::Wall) => '#',
                     Some(GridSpace::Space(vec)) if vec.is_empty() => '.',
@@ -357,25 +367,19 @@ impl Grid {
     }
 
     fn get_player_start_location(&self) -> Location {
-        let start_locations = self
-            .grid
-            .iter()
-            .filter(|(Location(ref r, _), ref gs)| *r == 0 && **gs == GridSpace::Space(vec![]))
+        let start_locations = (0..self.width)
+            .filter(|idx| self.get(self.idx_to_loc(*idx)) == Some(GridSpace::Space(vec![])))
             .collect::<Vec<_>>();
         assert!(start_locations.len() == 1);
-        return *start_locations[0].0;
+        return self.idx_to_loc(start_locations[0]);
     }
 
     fn get_player_end_location(&self) -> Location {
-        let end_locations = self
-            .grid
-            .iter()
-            .filter(|(Location(ref r, _), ref gs)| {
-                *r == (&self.height - 1) as isize && **gs == GridSpace::Space(vec![])
-            })
+        let end_locations = ((self.width * (self.height - 1))..(self.width * self.height))
+            .filter(|idx| self.get(self.idx_to_loc(*idx)) == Some(GridSpace::Space(vec![])))
             .collect::<Vec<_>>();
         assert!(end_locations.len() == 1);
-        return *end_locations[0].0;
+        return self.idx_to_loc(end_locations[0]);
     }
 }
 
