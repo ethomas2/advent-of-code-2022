@@ -1,9 +1,8 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Debug;
 use std::fs;
 use std::ops::Add;
-use std::rc::Rc;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 enum Direction {
@@ -111,7 +110,6 @@ impl<'a> From<&'a str> for Grid {
 
 mod fp {
     use std::collections::VecDeque;
-    use std::fmt::Debug;
     use std::rc::Rc;
 
     struct FNode<Node> {
@@ -362,7 +360,7 @@ impl Grid {
         let start_locations = self
             .grid
             .iter()
-            .filter(|(Location(ref r, ref c), ref gs)| *r == 0 && **gs == GridSpace::Space(vec![]))
+            .filter(|(Location(ref r, _), ref gs)| *r == 0 && **gs == GridSpace::Space(vec![]))
             .collect::<Vec<_>>();
         assert!(start_locations.len() == 1);
         return *start_locations[0].0;
@@ -389,7 +387,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // bfs for (Grid, loc) tuples
 
     let content = fs::read_to_string("src/d24/input")?;
-    let mut grid = Grid::from(content.as_str());
+    let grid = Grid::from(content.as_str());
     // for _ in 1..=10 {
     //     grid.pprint();
     //     println!("-----------------------------------------");
@@ -398,10 +396,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let player = *&grid.get_player_start_location();
     let endloc = *&grid.get_player_end_location();
-    println!("height {:?}", &grid.height);
     let bs = BoardState { grid, player };
-    println!("startloc {:?} ", player);
-    println!("endloc {:?} ", endloc);
     let path = fp::find_path(bs, |bs| bs.player == endloc, |bs| bs.children());
     println!("num steps {:?}", path.map(|x| x.len()));
 
