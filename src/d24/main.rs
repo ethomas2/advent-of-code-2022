@@ -273,14 +273,18 @@ impl BoardState {
 }
 
 impl Grid {
-    fn get(&self, loc: Location) -> Option<GridSpace> {
-        todo!()
+    fn get(&self, loc: Location) -> Option<&GridSpace> {
+        let idx = self.loc_to_idx(loc);
+        if idx < 0 || idx >= self.grid.len() {
+            return None;
+        }
+        return Some(&self.grid[idx]);
     }
     fn loc_to_idx(&self, loc: Location) -> usize {
         return self.width * loc.0 as usize + loc.1 as usize;
     }
     fn idx_to_loc(&self, idx: usize) -> Location {
-        return Location((idx % self.width) as isize, (idx / self.width) as isize);
+        return Location((idx / self.width) as isize, (idx % self.width) as isize);
     }
     fn next(&self) -> Self {
         let oldgrid = &self.grid;
@@ -290,7 +294,7 @@ impl Grid {
             ..
         } = self.clone_with_empty_spaces();
         for (idx, gridspace) in oldgrid.iter().enumerate() {
-            let loc = Location((idx % width) as isize, (idx / width) as isize);
+            let loc = Location((idx / width) as isize, (idx % width) as isize);
             match gridspace {
                 GridSpace::Space(blizzards) => {
                     for blizzard in blizzards {
@@ -367,8 +371,9 @@ impl Grid {
     }
 
     fn get_player_start_location(&self) -> Location {
+        self.pprint();
         let start_locations = (0..self.width)
-            .filter(|idx| self.get(self.idx_to_loc(*idx)) == Some(GridSpace::Space(vec![])))
+            .filter(|idx| self.get(dbg!(self.idx_to_loc(*idx))) == Some(&GridSpace::Space(vec![])))
             .collect::<Vec<_>>();
         assert!(start_locations.len() == 1);
         return self.idx_to_loc(start_locations[0]);
@@ -376,7 +381,7 @@ impl Grid {
 
     fn get_player_end_location(&self) -> Location {
         let end_locations = ((self.width * (self.height - 1))..(self.width * self.height))
-            .filter(|idx| self.get(self.idx_to_loc(*idx)) == Some(GridSpace::Space(vec![])))
+            .filter(|idx| self.get(self.idx_to_loc(*idx)) == Some(&GridSpace::Space(vec![])))
             .collect::<Vec<_>>();
         assert!(end_locations.len() == 1);
         return self.idx_to_loc(end_locations[0]);
