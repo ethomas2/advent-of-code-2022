@@ -81,7 +81,7 @@ impl<'a> From<&'a str> for Grid {
     fn from(content: &'a str) -> Self {
         let width = content.lines().next().unwrap().len();
         let height = content.lines().count();
-        let mut grid: Vec<GridSpace> = Vec::with_capacity(width * height);
+        let mut grid: Vec<GridSpace> = vec![GridSpace::Wall; width * height];
         content
             .lines()
             .enumerate()
