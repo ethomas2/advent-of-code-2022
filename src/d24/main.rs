@@ -5,7 +5,7 @@ use std::fs;
 use std::ops::Add;
 use std::rc::Rc;
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 enum Direction {
     Left,
     Right,
@@ -25,7 +25,7 @@ impl Direction {
 }
 type Blizzard = Direction;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 enum GridSpace {
     Wall,
     Space(Vec<Blizzard>),
@@ -71,7 +71,7 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Grid {
     grid: HashMap<Location, GridSpace>,
     height: usize,
@@ -231,6 +231,7 @@ mod test_fp {
     }
 }
 
+#[derive(Debug)]
 struct BoardState {
     grid: Grid,
     player: Location,
@@ -270,7 +271,9 @@ impl BoardState {
 impl Grid {
     fn next(&self) -> Self {
         let oldgrid = &self.grid;
-        let mut newgrid: HashMap<Location, GridSpace> = HashMap::new();
+        let Grid {
+            grid: mut newgrid, ..
+        } = self.clone_with_empty_spaces();
         for (loc, gridspace) in oldgrid {
             match gridspace {
                 GridSpace::Space(blizzards) => {
@@ -301,15 +304,32 @@ impl Grid {
                         }
                     }
                 }
-                GridSpace::Wall => {
-                    newgrid.insert(*loc, GridSpace::Wall);
-                }
+                GridSpace::Wall => {} // walls should already exist from clone_with_empty_spaces
             }
         }
         Grid {
             width: self.width,
             height: self.height,
             grid: newgrid,
+        }
+    }
+
+    fn clone_with_empty_spaces(&self) -> Grid {
+        let clone: HashMap<Location, GridSpace> = self
+            .grid
+            .keys()
+            .map(|k| {
+                let val = match self.grid.get(k).unwrap() {
+                    GridSpace::Wall => GridSpace::Wall,
+                    GridSpace::Space(_) => GridSpace::Space(vec![]),
+                };
+                (*k, val)
+            })
+            .collect::<_>();
+        Grid {
+            grid: clone,
+            height: self.height,
+            width: self.width,
         }
     }
 
