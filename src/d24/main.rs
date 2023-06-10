@@ -50,7 +50,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let width = content.lines().next().unwrap().len() as I;
     let endloc: (I, I) = *startgrid
         .iter()
-        .find(|&(&(_, col), space)| col == (height - 1) && *space == Space::Empty)
+        .find(|&(&(row, _), space)| row == (height - 1) && *space == Space::Empty)
         .unwrap()
         .0;
 
@@ -74,35 +74,24 @@ fn main() -> Result<(), Box<dyn Error>> {
                     ]
                 };
 
-                newlocs
-                    .into_iter()
-                    .map(|(r, c)| {
-                        if (r, c) == startloc || (r, c) == endloc {
-                            return (r, c);
-                        }
-                        (
-                            modulus(r - 1, height - 2) + 1,
-                            modulus(c - 1, width - 2) + 1,
-                        )
-                    })
-                    .filter(|&(r, c)| {
-                        if (r, c) == startloc || (r, c) == endloc {
-                            return true;
-                        }
-                        let uploc = (modulus((r - 1 - t), (height - 2)) + 1, c);
-                        let downloc = (modulus(r - 1 + t, height - 2) + 1, c);
-                        let leftloc = (r, modulus((c - 1 - t), (width - 2)) + 1);
-                        let rightloc = (r, modulus((c - 1 + t), (width - 2)) + 1);
-                        let works = (*startgrid.get(&uploc).unwrap()
-                            != Space::Blizzard(Direction::Down))
-                            && (*startgrid.get(&downloc).unwrap()
-                                != Space::Blizzard(Direction::Up))
-                            && (*startgrid.get(&leftloc).unwrap()
-                                != Space::Blizzard(Direction::Right))
-                            && (*startgrid.get(&rightloc).unwrap()
-                                != Space::Blizzard(Direction::Left));
-                        works
-                    })
+                newlocs.into_iter().filter(|&(r, c)| {
+                    if (r, c) == startloc || (r, c) == endloc {
+                        return true;
+                    }
+                    if r < 1 || r > height - 2 || c < 1 || c > width - 2 {
+                        return false;
+                    }
+                    let uploc = (modulus(r - 1 - t, height - 2) + 1, c);
+                    let downloc = (modulus(r - 1 + t, height - 2) + 1, c);
+                    let leftloc = (r, modulus(c - 1 - t, width - 2) + 1);
+                    let rightloc = (r, modulus(c - 1 + t, width - 2) + 1);
+                    let works = (*startgrid.get(&uploc).unwrap()
+                        != Space::Blizzard(Direction::Down))
+                        && (*startgrid.get(&downloc).unwrap() != Space::Blizzard(Direction::Up))
+                        && (*startgrid.get(&leftloc).unwrap() != Space::Blizzard(Direction::Right))
+                        && (*startgrid.get(&rightloc).unwrap() != Space::Blizzard(Direction::Left));
+                    works
+                })
             })
             .collect::<_>();
         if next_possible_locations.contains(&endloc) {
