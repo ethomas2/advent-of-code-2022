@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::fs;
 
+#[derive(Clone)]
 struct State {
     register_x: i32,
     cycle_num: i32,
@@ -38,33 +39,42 @@ fn main() -> Result<(), Box<dyn Error>> {
         .collect::<Result<Vec<Command>, String>>()?;
 
     let mut state = State {
-        register_x: 0,
-        cycle_num: 0,
+        register_x: 1,
+        cycle_num: 1,
     };
 
-    let cycle_num_checkpoints = vec![20, 60, 100, 140, 180, 220];
-    let mut signal_strength = 0;
-    for command in commands.iter() {
-        let prev_cycle_num = state.cycle_num;
-        match command {
-            Command::Noop => state.cycle_num += 1,
-            Command::Addx(n) => {
-                state.cycle_num += 2;
-                state.register_x += n;
-            }
+    let state_iter = commands.iter().flat_map(|command| match command {
+        &Command::Noop => {
+            state.cycle_num += 1;
+            let x: Box<dyn Iterator<Item = State>> =
+                Box::new(std::iter::empty().chain(std::iter::once(state.clone())));
+            return x;
         }
+        &Command::Addx(n) => {
+            state.cycle_num += 1;
+            let state1 = state.clone();
 
-        for &checkpoint in cycle_num_checkpoints.iter() {
-            if state.cycle_num >= checkpoint && prev_cycle_num < checkpoint {
-                println!(
-                    "prev_cycle={} current_cycle={} checkpoint={} register_x={}",
-                    prev_cycle_num, state.cycle_num, checkpoint, state.register_x
-                );
-                signal_strength += checkpoint * state.register_x;
-            }
+            state.cycle_num += 1;
+            state.register_x += n;
+            let state2 = state.clone();
+
+            let x: Box<dyn Iterator<Item = State>> =
+                Box::new(std::iter::once(state1).chain(std::iter::once(state2)));
+            return x;
         }
-    }
-    println!("{}", signal_strength);
+    });
+
+    let signal_stength: i32 = state_iter
+        .filter(|State { cycle_num, .. }| matches!(cycle_num, 20 | 60 | 100 | 140 | 180 | 220))
+        .map(
+            |State {
+                 cycle_num,
+                 register_x,
+             }| cycle_num * register_x,
+        )
+        .sum();
+
+    println!("{}", signal_stength);
 
     return Ok(());
 }
