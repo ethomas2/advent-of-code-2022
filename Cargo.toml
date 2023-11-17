@@ -9,6 +9,7 @@ include = ["src/"]
 [dependencies]
 itertools = "0.10.0"
 regex = "1.7.3"
+either = "1.9.0"
 
 [[bin]]
 name = "d01"
@@ -49,6 +50,10 @@ path = "src/d09/main.rs"
 [[bin]]
 name = "d10"
 path = "src/d10/main.rs"
+
+[[bin]]
+name = "d11"
+path = "src/d11/main.rs"
 
 [[bin]]
 name = "d23"
