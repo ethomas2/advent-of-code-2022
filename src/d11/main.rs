@@ -108,6 +108,16 @@ fn parse_monkey(s: &str) -> Result<Monkey, Box<dyn Error>> {
     Ok(monkey)
 }
 
+fn parse(content: &str) -> Result<MonkeyMap, Box<dyn Error>> {
+    let parsed_monkeys = content.split("\n\n").map(|s| dbg!(s)).map(parse_monkey);
+    let map = process_results(parsed_monkeys, |iter| {
+        let map: MonkeyMap = iter.map(|monkey| (monkey.id, monkey)).collect();
+        map
+    })?;
+
+    Ok(map)
+}
+
 type MonkeyMap = HashMap<i32, Monkey>;
 
 fn take_turn(map: &mut MonkeyMap, id: i32) {
@@ -136,16 +146,6 @@ fn take_round(map: &mut MonkeyMap) {
     for id in 0..map.len() {
         take_turn(map, id as i32)
     }
-}
-
-fn parse(content: &str) -> Result<MonkeyMap, Box<dyn Error>> {
-    let parsed_monkeys = content.split("\n\n").map(|s| dbg!(s)).map(parse_monkey);
-    let map = process_results(parsed_monkeys, |iter| {
-        let map: MonkeyMap = iter.map(|monkey| (monkey.id, monkey)).collect();
-        map
-    })?;
-
-    Ok(map)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
