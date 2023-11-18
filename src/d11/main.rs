@@ -17,14 +17,14 @@ struct Old;
 
 #[derive(Debug)]
 struct Operation {
-    lhs: Either<Old, i32>,
-    rhs: Either<Old, i32>,
+    lhs: Either<Old, i64>,
+    rhs: Either<Old, i64>,
     op: Op,
 }
 
 impl Operation {
-    fn call(&self, old_item: i32) -> i32 {
-        let [lhs, rhs]: [i32; 2] = [self.lhs, self.rhs].map(|x| match x {
+    fn call(&self, old_item: i64) -> i64 {
+        let [lhs, rhs]: [i64; 2] = [self.lhs, self.rhs].map(|x| match x {
             Either::Left(Old) => old_item,
             Either::Right(y) => y,
         });
@@ -32,23 +32,23 @@ impl Operation {
         match self.op {
             Op::Add => lhs + rhs,
             Op::Sub => lhs - rhs,
-            Op::Mul => lhs * rhs,
+            Op::Mul => dbg!(lhs) * dbg!(rhs),
         }
     }
 }
 
 #[derive(Debug)]
 struct Monkey {
-    id: i32,
-    items: Vec<i32>,
+    id: i64,
+    items: Vec<i64>,
     operation: Operation,
-    divisible: i32,
-    if_true: i32,
-    if_false: i32,
+    divisible: i64,
+    if_true: i64,
+    if_false: i64,
 }
 
 impl Monkey {
-    fn test(&self, item: i32) -> i32 {
+    fn test(&self, item: i64) -> i64 {
         if item % self.divisible == 0 {
             return self.if_true;
         } else {
@@ -67,18 +67,18 @@ fn parse_monkey(s: &str) -> Result<Monkey, Box<dyn Error>> {
 
     let cap = Regex::new(pattern)?.captures(s).ok_or("bad capture")?;
     let (id, items, operation, divisible, if_true, if_false) = (
-        cap.name("id").ok_or("bad id")?.as_str().parse::<i32>()?,
+        cap.name("id").ok_or("bad id")?.as_str().parse::<i64>()?,
         cap.name("items").ok_or(":o")?.as_str(),
         cap.name("operation").ok_or(":o")?.as_str(),
-        cap.name("divisible").ok_or(":o")?.as_str().parse::<i32>()?,
-        cap.name("if_true").ok_or(":o")?.as_str().parse::<i32>()?,
-        cap.name("if_false").ok_or(":o")?.as_str().parse::<i32>()?,
+        cap.name("divisible").ok_or(":o")?.as_str().parse::<i64>()?,
+        cap.name("if_true").ok_or(":o")?.as_str().parse::<i64>()?,
+        cap.name("if_false").ok_or(":o")?.as_str().parse::<i64>()?,
     );
 
     let items = items
         .split(' ')
-        .map(|s| s.replace(',', "").parse::<i32>().unwrap()) // TODO: get rid of unwrap
-        .collect::<Vec<i32>>();
+        .map(|s| s.replace(',', "").parse::<i64>().unwrap()) // TODO: get rid of unwrap
+        .collect::<Vec<i64>>();
 
     let isnum = |x: &str| -> bool { x.chars().all(|c| c.is_numeric()) };
     let operation: Operation = {
@@ -89,9 +89,9 @@ fn parse_monkey(s: &str) -> Result<Monkey, Box<dyn Error>> {
             "*" => Op::Mul,
             _ => panic!("unexpected piece {}", pieces[1]),
         };
-        let [lhs, rhs]: [Either<Old, i32>; 2] = [pieces[0], pieces[2]].map(|x| match x {
+        let [lhs, rhs]: [Either<Old, i64>; 2] = [pieces[0], pieces[2]].map(|x| match x {
             "old" => Either::Left(Old),
-            _ if isnum(x) => Either::Right(x.parse::<i32>().expect(":o")),
+            _ if isnum(x) => Either::Right(x.parse::<i64>().expect(":o")),
             _ => panic!(":o"),
         });
         Operation { lhs, rhs, op }
@@ -118,11 +118,11 @@ fn parse(content: &str) -> Result<MonkeyMap, Box<dyn Error>> {
     Ok(map)
 }
 
-type MonkeyMap = HashMap<i32, Monkey>;
+type MonkeyMap = HashMap<i64, Monkey>;
 
-fn take_turn<F>(map: &mut MonkeyMap, id: i32, mut closure: F)
+fn take_turn<F>(map: &mut MonkeyMap, id: i64, mut closure: F)
 where
-    F: FnMut(&MonkeyMap),
+    F: FnMut(&MonkeyMap, i64),
 {
     // for each item (<item_i>)
     //   - operation(<item_i>)
@@ -142,30 +142,42 @@ where
         // mutate the dst monkey
         let dst_monkey = map.get_mut(&throw_to).unwrap();
         dst_monkey.items.push(item_to_throw);
-        closure(map);
+        closure(map, id);
     }
 }
 
 fn take_round<F>(map: &mut MonkeyMap, mut closure: F)
 where
-    F: FnMut(&MonkeyMap),
+    F: FnMut(&MonkeyMap, i64),
 {
     for id in 0..map.len() {
-        take_turn(map, id as i32, &mut closure);
+        take_turn(map, id as i64, &mut closure);
     }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let content = fs::read_to_string("src/d11/input")?;
     let mut monkey_map = parse(content.as_str())?;
-    let mut num = 0;
-    let mut closure = |mm: &MonkeyMap| {
-        num += 1;
+    let mut inspection_log: HashMap<i64, i64> = HashMap::new(); // monkey id -> num times inspected
+    let mut closure = |mm: &MonkeyMap, id: i64| {
+        *inspection_log.entry(id).or_insert(0) += 1;
     };
     for _ in 0..20 {
         take_round(&mut monkey_map, &mut closure);
     }
-    println!("{}", num);
+    let mut inspections: Vec<i64> = inspection_log.iter().map(|(_, val)| *val).collect::<_>();
+    inspections.sort();
+    inspections.reverse();
+    match inspections[0..2] {
+        [a, b] => {
+            println!("{}", a);
+            println!("{}", b);
+            println!("{}", a * b);
+        }
+        _ => println!("Bad inspections"),
+    }
+    // println!("{:?}", inspection_log);
+    // println!("{}", monkey_buisness);
     Ok(())
 }
 
