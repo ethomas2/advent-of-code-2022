@@ -174,69 +174,72 @@ mod tests {
     use super::*;
 
     fn _get_data() -> MonkeyMap {
-    let mut monkey_map: MonkeyMap = HashMap::new();
-
-    // Monkey 0
-    monkey_map.insert(0, Monkey {
-        id: 0,
-        items: vec![79, 98],
-        operation: Operation {
-            lhs: Either::Left(Old),
-            rhs: Either::Right(19),
-            op: Op::Mul,
-        },
-        divisible: 23,
-        if_true: 2,
-        if_false: 3,
-    });
-
-    // Monkey 1
-    monkey_map.insert(1, Monkey {
-        id: 1,
-        items: vec![54, 65, 75, 74],
-        operation: Operation {
-            lhs: Either::Left(Old),
-            rhs: Either::Right(6),
-            op: Op::Add,
-        },
-        divisible: 19,
-        if_true: 2,
-        if_false: 0,
-    });
-
-    // Monkey 2
-    monkey_map.insert(2, Monkey {
-        id: 2,
-        items: vec![79, 60, 97],
-        operation: Operation {
-            lhs: Either::Left(Old),
-            rhs: Either::Left(Old), // 'old * old' implies both lhs and rhs are the old value
-            op: Op::Mul,
-        },
-        divisible: 13,
-        if_true: 1,
-        if_false: 3,
-    });
-
-    // Monkey 3
-    monkey_map.insert(3, Monkey {
-        id: 3,
-        items: vec![74],
-        operation: Operation {
-            lhs: Either::Left(Old),
-            rhs: Either::Right(3),
-            op: Op::Add,
-        },
-        divisible: 17,
-        if_true: 0,
-        if_false: 1,
-    });
-    return monkey_map;
+        HashMap::from([
+            (
+                0,
+                Monkey {
+                    id: 0,
+                    items: vec![79, 98],
+                    operation: Operation {
+                        lhs: Either::Left(Old),
+                        rhs: Either::Right(19),
+                        op: Op::Mul,
+                    },
+                    divisible: 23,
+                    if_true: 2,
+                    if_false: 3,
+                },
+            ),
+            (
+                1,
+                Monkey {
+                    id: 1,
+                    items: vec![54, 65, 75, 74],
+                    operation: Operation {
+                        lhs: Either::Left(Old),
+                        rhs: Either::Right(6),
+                        op: Op::Add,
+                    },
+                    divisible: 19,
+                    if_true: 2,
+                    if_false: 0,
+                },
+            ),
+            (
+                2,
+                Monkey {
+                    id: 2,
+                    items: vec![79, 60, 97],
+                    operation: Operation {
+                        lhs: Either::Left(Old),
+                        rhs: Either::Left(Old), // 'old * old' implies both lhs and rhs are the old value
+                        op: Op::Mul,
+                    },
+                    divisible: 13,
+                    if_true: 1,
+                    if_false: 3,
+                },
+            ),
+            (
+                3,
+                Monkey {
+                    id: 3,
+                    items: vec![74],
+                    operation: Operation {
+                        lhs: Either::Left(Old),
+                        rhs: Either::Right(3),
+                        op: Op::Add,
+                    },
+                    divisible: 17,
+                    if_true: 0,
+                    if_false: 1,
+                },
+            ),
+        ])
     }
-
 
     fn test_1() {
         let mut mm: MonkeyMap = HashMap::new();
-        Monkey { id: 0, items:
+        // Monkey { id: 0, items:
     }
 }
