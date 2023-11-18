@@ -109,7 +109,7 @@ fn parse_monkey(s: &str) -> Result<Monkey, Box<dyn Error>> {
 }
 
 fn parse(content: &str) -> Result<MonkeyMap, Box<dyn Error>> {
-    let parsed_monkeys = content.split("\n\n").map(|s| dbg!(s)).map(parse_monkey);
+    let parsed_monkeys = content.split("\n\n").map(parse_monkey);
     let map = process_results(parsed_monkeys, |iter| {
         let map: MonkeyMap = iter.map(|monkey| (monkey.id, monkey)).collect();
         map
@@ -120,7 +120,10 @@ fn parse(content: &str) -> Result<MonkeyMap, Box<dyn Error>> {
 
 type MonkeyMap = HashMap<i32, Monkey>;
 
-fn take_turn(map: &mut MonkeyMap, id: i32) {
+fn take_turn<F>(map: &mut MonkeyMap, id: i32, mut closure: F)
+where
+    F: FnMut(&MonkeyMap),
+{
     // for each item (<item_i>)
     //   - operation(<item_i>)
     //   - <item_i> /= 3
@@ -139,20 +142,101 @@ fn take_turn(map: &mut MonkeyMap, id: i32) {
         // mutate the dst monkey
         let dst_monkey = map.get_mut(&throw_to).unwrap();
         dst_monkey.items.push(item_to_throw);
+        closure(map);
     }
 }
 
-fn take_round(map: &mut MonkeyMap) {
+fn take_round<F>(map: &mut MonkeyMap, mut closure: F)
+where
+    F: FnMut(&MonkeyMap),
+{
     for id in 0..map.len() {
-        take_turn(map, id as i32)
+        take_turn(map, id as i32, &mut closure);
     }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let content = fs::read_to_string("src/d11/input")?;
     let mut monkey_map = parse(content.as_str())?;
+    let mut num = 0;
+    let mut closure = |mm: &MonkeyMap| {
+        num += 1;
+    };
     for _ in 0..20 {
-        take_round(&mut monkey_map);
+        take_round(&mut monkey_map, &mut closure);
     }
+    println!("{}", num);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn _get_data() -> MonkeyMap {
+    let mut monkey_map: MonkeyMap = HashMap::new();
+
+    // Monkey 0
+    monkey_map.insert(0, Monkey {
+        id: 0,
+        items: vec![79, 98],
+        operation: Operation {
+            lhs: Either::Left(Old),
+            rhs: Either::Right(19),
+            op: Op::Mul,
+        },
+        divisible: 23,
+        if_true: 2,
+        if_false: 3,
+    });
+
+    // Monkey 1
+    monkey_map.insert(1, Monkey {
+        id: 1,
+        items: vec![54, 65, 75, 74],
+        operation: Operation {
+            lhs: Either::Left(Old),
+            rhs: Either::Right(6),
+            op: Op::Add,
+        },
+        divisible: 19,
+        if_true: 2,
+        if_false: 0,
+    });
+
+    // Monkey 2
+    monkey_map.insert(2, Monkey {
+        id: 2,
+        items: vec![79, 60, 97],
+        operation: Operation {
+            lhs: Either::Left(Old),
+            rhs: Either::Left(Old), // 'old * old' implies both lhs and rhs are the old value
+            op: Op::Mul,
+        },
+        divisible: 13,
+        if_true: 1,
+        if_false: 3,
+    });
+
+    // Monkey 3
+    monkey_map.insert(3, Monkey {
+        id: 3,
+        items: vec![74],
+        operation: Operation {
+            lhs: Either::Left(Old),
+            rhs: Either::Right(3),
+            op: Op::Add,
+        },
+        divisible: 17,
+        if_true: 0,
+        if_false: 1,
+    });
+    return monkey_map;
+    }
+
+
+    fn test_1() {
+        let mut mm: MonkeyMap = HashMap::new();
+        Monkey { id: 0, items:
+    }
 }
