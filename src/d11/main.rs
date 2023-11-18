@@ -242,17 +242,102 @@ mod tests {
     fn test_1() {
         let mut monkey_map = _get_data();
 
-        // Take one round
-        take_round(&mut monkey_map, |_| {});
+        for round in 1..=10 {
+            take_round(&mut monkey_map, |_| {});
 
-        // Now, assert the state of each monkey in monkey_map
-
-        assert_eq!(monkey_map.get(&0).unwrap().items, vec![20, 23, 27, 26]);
-        assert_eq!(
-            monkey_map.get(&1).unwrap().items,
-            vec![2080, 25, 167, 207, 401, 1046]
-        );
-        assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
-        assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+            match round {
+                2 => {
+                    assert_eq!(
+                        monkey_map.get(&0).unwrap().items,
+                        vec![695, 10, 71, 135, 350]
+                    );
+                    assert_eq!(monkey_map.get(&1).unwrap().items, vec![43, 49, 58, 55, 362]);
+                    assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+                    assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+                }
+                3 => {
+                    assert_eq!(monkey_map.get(&0).unwrap().items, vec![16, 18, 21, 20, 122]);
+                    assert_eq!(
+                        monkey_map.get(&1).unwrap().items,
+                        vec![1468, 22, 150, 286, 739]
+                    );
+                    assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+                    assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+                }
+                4 => {
+                    assert_eq!(
+                        monkey_map.get(&0).unwrap().items,
+                        vec![491, 9, 52, 97, 248, 34]
+                    );
+                    assert_eq!(monkey_map.get(&1).unwrap().items, vec![39, 45, 43, 258]);
+                    assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+                    assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+                }
+                5 => {
+                    assert_eq!(
+                        monkey_map.get(&0).unwrap().items,
+                        vec![15, 17, 16, 88, 1037]
+                    );
+                    assert_eq!(
+                        monkey_map.get(&1).unwrap().items,
+                        vec![20, 110, 205, 524, 72]
+                    );
+                    assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+                    assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+                }
+                6 => {
+                    assert_eq!(monkey_map.get(&0).unwrap().items, vec![8, 70, 176, 26, 34]);
+                    assert_eq!(
+                        monkey_map.get(&1).unwrap().items,
+                        vec![481, 32, 36, 186, 2190]
+                    );
+                    assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+                    assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+                }
+                7 => {
+                    assert_eq!(
+                        monkey_map.get(&0).unwrap().items,
+                        vec![162, 12, 14, 64, 732, 17]
+                    );
+                    assert_eq!(monkey_map.get(&1).unwrap().items, vec![148, 372, 55, 72]);
+                    assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+                    assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+                }
+                8 => {
+                    assert_eq!(
+                        monkey_map.get(&0).unwrap().items,
+                        vec![51, 126, 20, 26, 136]
+                    );
+                    assert_eq!(
+                        monkey_map.get(&1).unwrap().items,
+                        vec![343, 26, 30, 1546, 36]
+                    );
+                    assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+                    assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+                }
+                9 => {
+                    assert_eq!(
+                        monkey_map.get(&0).unwrap().items,
+                        vec![116, 10, 12, 517, 14]
+                    );
+                    assert_eq!(
+                        monkey_map.get(&1).unwrap().items,
+                        vec![108, 267, 43, 55, 288]
+                    );
+                    assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+                    assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+                }
+                10 => {
+                    assert_eq!(monkey_map.get(&0).unwrap().items, vec![91, 16, 20, 98]);
+                    assert_eq!(
+                        monkey_map.get(&1).unwrap().items,
+                        vec![481, 245, 22, 26, 1092, 30]
+                    );
+                    assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+                    assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
+                }
+                _ => {}
+            }
+        }
     }
 }
