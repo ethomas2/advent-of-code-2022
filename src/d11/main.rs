@@ -238,8 +238,21 @@ mod tests {
         ])
     }
 
+    #[test]
     fn test_1() {
-        let mut mm: MonkeyMap = HashMap::new();
-        // Monkey { id: 0, items:
+        let mut monkey_map = _get_data();
+
+        // Take one round
+        take_round(&mut monkey_map, |_| {});
+
+        // Now, assert the state of each monkey in monkey_map
+
+        assert_eq!(monkey_map.get(&0).unwrap().items, vec![20, 23, 27, 26]);
+        assert_eq!(
+            monkey_map.get(&1).unwrap().items,
+            vec![2080, 25, 167, 207, 401, 1046]
+        );
+        assert_eq!(monkey_map.get(&2).unwrap().items, vec![]);
+        assert_eq!(monkey_map.get(&3).unwrap().items, vec![]);
     }
 }
