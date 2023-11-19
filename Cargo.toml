@@ -10,6 +10,7 @@ include = ["src/"]
 itertools = "0.10.0"
 regex = "1.7.3"
 either = "1.9.0"
+queues = "1.1.0"
 
 [[bin]]
 name = "d01"
@@ -58,6 +59,14 @@ path = "src/d11/main.rs"
 [[test]]
 name = "d11"
 path = "src/d11/main.rs"
+
+[[bin]]
+name = "d12"
+path = "src/d12/main.rs"
+
+[[test]]
+name = "d12"
+path = "src/d12/main.rs"
 
 [[bin]]
 name = "d23"
